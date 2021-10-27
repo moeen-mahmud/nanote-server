@@ -1,0 +1,19 @@
+{
+  "name": "nanote-server",
+  "version": "0.0.1",
+  "description": "A Simple Note Taking Web App",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start-dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Moeen Mahmud",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "mongodb": "^4.1.3"
+  }
+}
