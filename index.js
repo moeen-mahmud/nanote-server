@@ -114,6 +114,11 @@ async function run() {
 
 run().catch(console.dir);
 
+//Heroku endpoint testing
+app.get("/test", (req, res) => {
+  res.send("Hello from Heroku");
+});
+
 //Primary endpoint
 app.get("/", (req, res) => {
   res.send("Nanote Server is working!");
