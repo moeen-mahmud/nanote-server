@@ -60,6 +60,7 @@ async function run() {
           title: updateNote.title,
           details: updateNote.details,
           category: updateNote.category,
+          modifiedAt: updateNote.modifiedAt,
         },
       };
       const result = await noteCollection.updateOne(filter, updateDoc, option);
