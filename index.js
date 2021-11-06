@@ -29,7 +29,12 @@ async function run() {
     app.get("/notes", async (req, res) => {
       const email = req.query.email;
       const category = req.query.category;
-      const query = { email: email, category: category };
+      let query = {};
+      if (category) {
+        query = { email: email, category: category };
+      } else {
+        query = { email: email };
+      }
       const cursor = noteCollection.find(query);
       const notes = await cursor.toArray();
       res.json(notes);
