@@ -27,7 +27,9 @@ async function run() {
 
     //GET API
     app.get("/notes", async (req, res) => {
-      const cursor = noteCollection.find({});
+      const email = req.query.email;
+      const query = { email: email };
+      const cursor = noteCollection.find(query);
       const notes = await cursor.toArray();
       res.json(notes);
     });
