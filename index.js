@@ -81,7 +81,9 @@ async function run() {
 
     //Find All Favourites
     app.get("/favourites", async (req, res) => {
-      const cursor = favouriteCollection.find({});
+      const email = req.query.email;
+      const query = { email: email };
+      const cursor = favouriteCollection.find(query);
       const favourites = await cursor.toArray();
       res.json(favourites);
     });
