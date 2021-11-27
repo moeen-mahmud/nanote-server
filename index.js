@@ -1,6 +1,7 @@
 //Importing requirements
 const express = require("express");
 const cors = require("cors");
+const admin = require("firebase-admin");
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 const ObjectId = require("mongodb").ObjectId;
@@ -10,6 +11,25 @@ const port = process.env.PORT || 5000;
 //Middleware
 app.use(cors());
 app.use(express.json());
+
+// Firebase admin
+const serviceAccount = require("./nanote-moeen-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+// Function for verifying JWT
+async function verifyToken(req, res, next) {
+  if (req.headers?.authorization?.startsWith("Bearer ")) {
+    const idToken = req.headers.authorization.split("Bearer ")[1];
+    try {
+      const decodedUser = await admin.auth().verifyIdToken(idToken);
+      req.decodedUserEmail = decodedUser.email;
+    } catch {}
+  }
+  next();
+}
 
 //Mongo Client
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@nanotecluster.xaaaj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -26,25 +46,28 @@ async function run() {
     const favouriteCollection = database.collection("favourites");
 
     //GET API
-    app.get("/notes", async (req, res) => {
+    app.get("/notes", verifyToken, async (req, res) => {
       const email = req.query.email;
       const category = req.query.category;
-      let query = {};
-      if (category) {
-        query = { email: email, category: category };
+      if (req.decodedUserEmail === email) {
+        let query = {};
+        if (category) {
+          query = { email: email, category: category };
+        } else {
+          query = { email: email };
+        }
+        const cursor = noteCollection.find(query);
+        const notes = await cursor.toArray();
+        res.json(notes);
       } else {
-        query = { email: email };
+        res.status(401).send("User unauthorized");
       }
-      const cursor = noteCollection.find(query);
-      const notes = await cursor.toArray();
-      res.json(notes);
     });
 
     //POST API
     app.post("/notes", async (req, res) => {
       const newNote = req.body;
       const result = await noteCollection.insertOne(newNote);
-      console.log("New note inserted with id", result.insertedId);
       res.json(result);
     });
 
@@ -53,7 +76,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const note = await noteCollection.findOne(query);
-      console.log("Finding note", note);
       res.json(note);
     });
 
@@ -72,7 +94,6 @@ async function run() {
         },
       };
       const result = await noteCollection.updateOne(filter, updateDoc, option);
-      console.log("Updated note", result);
       res.json(result);
     });
 
@@ -81,7 +102,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await noteCollection.deleteOne(query);
-      console.log("Deleting the note", result);
       res.json(result);
     });
 
@@ -99,7 +119,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: id };
       const result = await favouriteCollection.findOne(query);
-      console.log("Finding notes from favs", result);
       res.json(result);
     });
 
@@ -107,7 +126,6 @@ async function run() {
     app.post("/favourites", async (req, res) => {
       const favourite = req.body;
       const result = await favouriteCollection.insertOne(favourite);
-      console.log("Favourite Note Inserted", result);
       res.json(result);
     });
 
@@ -116,7 +134,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: id };
       const result = await favouriteCollection.deleteOne(query);
-      console.log("Removed item from favourite", result);
       res.json(result);
     });
   } finally {
@@ -124,11 +141,6 @@ async function run() {
 }
 
 run().catch(console.dir);
-
-//Heroku endpoint testing
-app.get("/test", (req, res) => {
-  res.send("Hello from Heroku");
-});
 
 //Primary endpoint
 app.get("/", (req, res) => {
